@@ -16,7 +16,7 @@ library(tidyverse)
 library(tidytuesdayR)
 library(tidytext)
 library(tvthemes)
-
+library(ggrepel)
 
 ```
 
@@ -54,11 +54,10 @@ tt %>%
 
 ```
 
-# Wrangle
 
-Ok lest see what this data is
 
-```{r Wrangle}
+
+```{r }
 #select data
 avatar <- tt$avatar
 colnames(avatar)
@@ -70,7 +69,7 @@ head(avatar$character_words)
 
 plotting imdb rating against chapter number
 
-```{r Wrangle}
+```{r }
 
 chap.rating <- avatar %>% 
   group_by(book_num) %>% 
@@ -87,7 +86,7 @@ lets see how many time the Aang's name is called in each chapter
 
 ```{r}
 Aang <- avatar %>%
-  select(book_num, chapter_num, character, character_words) %>%
+  select(book, book_num, chapter_num, character, character_words) %>%
   unnest_tokens(output = word, input = character_words) %>%
   filter(word %in% c("aang", "aang's")) %>%
   mutate(aa = 
@@ -95,19 +94,30 @@ Aang <- avatar %>%
                         word == "aang's" ~ 1))
 
 
+#tell ggplot I need in this order 
+Aang$book <- factor(Aang$book, levels=c("Water", "Earth", "Fire"))
 
+#making the plot
 
 Aang.plot <- Aang %>%
-  group_by(book_num) %>%
+  group_by(book) %>%
   ggplot(aes(x = chapter_num, y = aa,
-             fill = factor(character))) + theme_avatar() +
+             label = character,
+             fill = factor(character))) + 
+  theme_avatar() +
+  labs(title = "Number of times Aang's name is called in each episode", x =
+         "Episode number", y = "Count", fill = "Character mentioning Aang's name") + 
   geom_col() +
-  facet_wrap(~ book_num)
+  facet_wrap( ~ book)+
+  theme(legend.title = element_text(size = 9), 
+               legend.text = element_text(size = 9)) + 
+  guides(shape = guide_legend(override.aes = list(size = 0.5))) +
+  ggsave("Avatar_plot.png", width = 9, height = 7)
   
   
-Aang.plot
+Aang.plot 
 
-count(Aang$character)
+
 ```
 
 
