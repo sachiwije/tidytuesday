@@ -1,23 +1,22 @@
 ---
-title: "TidyTemplate"
+title: "Avatar: The Last Airbender"
 date: 2020-08-14
 output: html_output
 ---
 
-# TidyTuesday
-
-Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
-Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
-While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
-The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
-As such we encourage everyone of all skills to participate!
 
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
 
+install.packages("tidytext")
+
+
 library(tidyverse)
 library(tidytuesdayR)
+library(tidytext)
+library(tvthemes)
+
 
 ```
 
@@ -57,39 +56,58 @@ tt %>%
 
 # Wrangle
 
-Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+Ok lest see what this data is
+
+```{r Wrangle}
+#select data
+avatar <- tt$avatar
+colnames(avatar)
+view(avatar)
+head(avatar$character_words)
+
+```
+
+
+plotting imdb rating against chapter number
 
 ```{r Wrangle}
 
-#select data
-avatar <- tt$avatar
-avatar
-
-book1 <- avatar %>%
-  filter(book_num == 1 ) %>%
-  distinct(chapter_num, imdb_rating)
-
-ggplot(book1, aes(x=chapter_num, y=imdb_rating)) +
-  geom_bar(stat = "identity")
+chap.rating <- avatar %>% 
+  group_by(book_num) %>% 
+  distinct(chapter_num, imdb_rating) %>% 
+  ggplot(aes(x = chapter_num, y = imdb_rating)) +
+  geom_col() +
+  facet_wrap(~ book_num)
+```
 
 
 
-books <- distinct(avatar,book_num)
-for (book_num in books) { 
-  book1 <- filter(avatar, book_num == 1)
-  book2 <- filter(avatar, book_num == 2)
+
+lets see how many time the Aang's name is called in each chapter
+
+```{r}
+Aang <- avatar %>%
+  select(book_num, chapter_num, character, character_words) %>%
+  unnest_tokens(output = word, input = character_words) %>%
+  filter(word %in% c("aang", "aang's")) %>%
+  mutate(aa = 
+           case_when(word == "aang" ~ 1,
+                        word == "aang's" ~ 1))
+
+
+
+
+Aang.plot <- Aang %>%
+  group_by(book_num) %>%
+  ggplot(aes(x = chapter_num, y = aa,
+             fill = factor(character))) + theme_avatar() +
+  geom_col() +
+  facet_wrap(~ book_num)
   
-}
+  
+Aang.plot
 
-
-df <- tibble(
-  a = rnorm(10),
-  b = rnorm(10),
-  c = rnorm(10),
-  d = rnorm(10)
-)
-
-
+count(Aang$character)
 ```
 
 
